@@ -1,0 +1,250 @@
+// gomigomi - Point-Based Lottery Platform
+// Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & AUTHENTICATION MODELS
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  points        Int       @default(100) // Starting points for new users
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  addresses     Address[]
+  lotteries     Lottery[]        @relation("CreatedLotteries")
+  wonLotteries  Lottery[]        @relation("WonLotteries")
+  entries       LotteryEntry[]
+  pointHistory  PointTransaction[]
+  notifications Notification[]
+
+  @@map("user")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ============================================
+// ADDRESS MODEL
+// ============================================
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name       String  // Recipient name
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String  @default("US")
+  phone      String?
+  isDefault  Boolean @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// LOTTERY MODELS
+// ============================================
+
+model Lottery {
+  id              String        @id @default(cuid())
+  title           String
+  description     String        @db.Text
+  images          String[]      // Array of image URLs
+  condition       ItemCondition
+  category        String
+
+  maxParticipants Int?          // null = unlimited
+  pointsPerEntry  Int           @default(10) // Minimum points to enter
+
+  status          LotteryStatus @default(DRAFT)
+  startDate       DateTime      @default(now())
+  endDate         DateTime
+
+  creatorId       String
+  creator         User          @relation("CreatedLotteries", fields: [creatorId], references: [id])
+
+  winnerId        String?
+  winner          User?         @relation("WonLotteries", fields: [winnerId], references: [id])
+
+  entries         LotteryEntry[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([endDate])
+  @@index([category])
+  @@index([startDate]) // For cron job activation queries
+  @@index([status, endDate]) // Composite index for cron job completion queries
+  @@index([status, startDate]) // Composite index for cron job activation queries
+  @@index([creatorId, status]) // For my-lotteries page filtering
+}
+
+enum LotteryStatus {
+  DRAFT       // Being created, not visible to others
+  SCHEDULED   // Published, visible but not joinable until startDate
+  ACTIVE      // Open for entries
+  COMPLETED   // Winner selected, points awarded to seller
+  CANCELLED   // Cancelled by seller, points refunded
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+model LotteryEntry {
+  id        String   @id @default(cuid())
+  points    Int      // Total points spent (can be increased via boost)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  lotteryId String
+  lottery   Lottery  @relation(fields: [lotteryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lotteryId]) // One entry per user per lottery (can boost points)
+  @@index([lotteryId])
+  @@index([userId, createdAt]) // For my-entries page queries
+}
+
+// ============================================
+// POINTS & TRANSACTIONS
+// ============================================
+
+model PointTransaction {
+  id          String               @id @default(cuid())
+  amount      Int                  // Positive = earned, Negative = spent
+  type        PointTransactionType
+  description String?
+
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id])
+  lotteryId   String?              // Reference to lottery if applicable
+
+  createdAt   DateTime             @default(now())
+
+  @@index([userId])
+  @@index([lotteryId])
+  @@index([userId, createdAt]) // For points history page queries
+}
+
+enum PointTransactionType {
+  SIGNUP_BONUS    // +100 on registration
+  LOTTERY_CREATED // +ALL points from pool when lottery completes
+  LOTTERY_ENTRY   // -points when entering lottery
+  LOTTERY_BOOST   // -points when boosting entry
+  LOTTERY_REFUND  // +points when lottery cancelled
+  REFERRAL_BONUS  // +25 for referrals
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json?            // Extra data (lotteryId, winnerId, etc.)
+
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  LOTTERY_WON       // You won a lottery!
+  LOTTERY_ENDED     // A lottery you entered has ended
+  LOTTERY_CANCELLED // A lottery was cancelled (points refunded)
+  NEW_ENTRY         // Someone entered your lottery
+  POINTS_EARNED     // You earned points
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+model Category {
+  id   String  @id @default(cuid())
+  name String  @unique
+  slug String  @unique
+  icon String? // Icon name for UI (e.g., "laptop", "clothing")
+
+  createdAt DateTime @default(now())
+}
