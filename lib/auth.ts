@@ -1,37 +1,80 @@
-/**
- * Better Auth Configuration
- *
- * TODO: BACKEND_2 - Implement authentication with Better Auth
- *
- * Required features:
- * - Google OAuth sign-in
- * - Email/password authentication
- * - Signup bonus (100 points) on user creation via databaseHooks
- * - Session management with user data
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
+import { db } from "./db";
+import bcrypt from "bcryptjs";
 
-// Placeholder - BACKEND_2 will implement
-export const auth = {
-  api: {
-    getSession: async () => null,
-  },
-  handler: () => {
-    throw new Error("Auth not implemented - BACKEND_2 TODO");
-  },
-};
+export const auth = betterAuth({
+  database: prismaAdapter(db, {
+    provider: "postgresql",
+  }),
 
-export type Session = {
-  user: {
-    id: string;
-    email: string;
-    name: string | null;
-    image: string | null;
-    points: number;
-  };
+  emailAndPassword: {
+    enabled: true,
+    // Use bcryptjs for Vercel compatibility (no native deps)
+    password: {
+      hash: async (password: string) => {
+        return bcrypt.hash(password, 10);
+      },
+      verify: async (data: { password: string; hash: string }) => {
+        return bcrypt.compare(data.password, data.hash);
+      },
+    },
+  },
+
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+
   session: {
-    id: string;
-    expiresAt: Date;
-  };
-} | null;
+    expiresIn: 60 * 60 * 4, // 4 hours
+    updateAge: 60 * 60, // Update every hour
+  },
+
+  user: {
+    additionalFields: {
+      points: {
+        type: "number",
+        required: false,
+        defaultValue: 100,
+      },
+    },
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Award signup bonus
+          try {
+            await db.pointTransaction.create({
+              data: {
+                userId: user.id,
+                amount: 100,
+                type: "SIGNUP_BONUS",
+                description: "Welcome bonus for signing up!",
+              },
+            });
+            console.log(`Awarded 100 signup bonus to user ${user.id}`);
+          } catch (error) {
+            console.error("Failed to award signup bonus:", error);
+          }
+        },
+      },
+    },
+  },
+
+  plugins: [nextCookies()],
+});
+
+export type Session = typeof auth.$Infer.Session;
