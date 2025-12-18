@@ -1,43 +1,24 @@
-/**
- * Better Auth Client
- *
- * TODO: BACKEND_2 - Implement client-side auth utilities
- *
- * Required exports:
- * - authClient - Main auth client instance
- * - signIn - Sign in functions (email, social)
- * - signUp - Sign up function
- * - signOut - Sign out function
- * - useSession - React hook for session state
- * - getSession - Get current session
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
+import { createAuthClient } from "better-auth/react";
 
-// Placeholder hooks - BACKEND_2 will implement with createAuthClient
-export const authClient = {
-  signIn: {
-    email: async () => {
-      throw new Error("Auth not implemented - BACKEND_2 TODO");
-    },
-    social: async () => {
-      throw new Error("Auth not implemented - BACKEND_2 TODO");
-    },
-  },
-  signUp: {
-    email: async () => {
-      throw new Error("Auth not implemented - BACKEND_2 TODO");
-    },
-  },
-  signOut: async () => {
-    throw new Error("Auth not implemented - BACKEND_2 TODO");
-  },
-  useSession: () => ({ data: null, isPending: true }),
-  getSession: async () => null,
-};
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL,
+});
 
-export const signIn = authClient.signIn;
-export const signUp = authClient.signUp;
-export const signOut = authClient.signOut;
-export const useSession = authClient.useSession;
-export const getSession = authClient.getSession;
+export const { useSession, signIn, signUp, signOut } = authClient;
+```
+
+**`app/(auth)/layout.tsx`**
+```tsx
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="w-full max-w-md px-4">
+        {children}
+      </div>
+    </div>
+  );
+}
