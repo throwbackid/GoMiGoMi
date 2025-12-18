@@ -1,45 +1,35 @@
-/**
- * PointBadge Component
- *
- * Displays user's point balance as a badge.
- *
- * @owner Frontend Team
- *
- * Props:
- * - points: number
- * - size?: "sm" | "md" | "lg"
- * - showIcon?: boolean
- *
- * Features:
- * - [ ] Coin/point icon
- * - [ ] Formatted number display
- * - [ ] Size variants
- * - [ ] Animation on change (optional)
- */
+import { Coins } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PointBadgeProps {
   points: number;
   size?: "sm" | "md" | "lg";
   showIcon?: boolean;
+  className?: string;
 }
 
 export function PointBadge({
   points,
   size = "md",
   showIcon = true,
+  className
 }: PointBadgeProps) {
-  const sizeClasses = {
-    sm: "text-xs px-2 py-0.5",
-    md: "text-sm px-3 py-1",
-    lg: "text-base px-4 py-1.5",
-  };
-
   return (
     <div
-      className={`inline-flex items-center gap-1 bg-amber-100 text-amber-800 rounded-full ${sizeClasses[size]}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-500 font-medium",
+        size === "sm" && "px-2 py-0.5 text-xs",
+        size === "md" && "px-3 py-1 text-sm",
+        size === "lg" && "px-4 py-1.5 text-base",
+        className
+      )}
     >
-      {showIcon && <span>🪙</span>}
-      <span className="font-medium">{points.toLocaleString()}</span>
+      {showIcon && <Coins className={cn(
+        size === "sm" && "h-3 w-3",
+        size === "md" && "h-4 w-4",
+        size === "lg" && "h-5 w-5",
+      )} />}
+      {points.toLocaleString()}
     </div>
   );
 }
