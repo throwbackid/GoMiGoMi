@@ -1,40 +1,60 @@
-/**
- * Addresses API - List & Create
- *
- * TODO: BACKEND_2 - Implement address management
- *
- * GET /api/addresses
- * - List user's shipping addresses (requires auth)
- * - Order by isDefault desc, createdAt desc
- *
- * POST /api/addresses
- * - Create new address (requires auth)
- * - Validate with addressSchema from @/types
- * - Handle isDefault flag (unset other defaults)
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
-
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@/lib/db";
+import { addressSchema } from "@/types";
+import { createErrorResponse } from "@/lib/errors";
 
 export async function GET() {
-  // TODO: BACKEND_2 - List addresses
-  // 1. Check auth: auth.api.getSession({ headers: await headers() })
-  // 2. Query: db.address.findMany({ where: { userId: session.user.id } })
-  return NextResponse.json(
-    { error: "Addresses API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const addresses = await db.address.findMany({
+      where: { userId: session.user.id },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+    });
+
+    return Response.json(addresses);
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }
 
-export async function POST() {
-  // TODO: BACKEND_2 - Create address
-  // 1. Check auth
-  // 2. Validate body with addressSchema.parse(body)
-  // 3. If isDefault, unset other defaults first
-  // 4. Create with db.address.create()
-  return NextResponse.json(
-    { error: "Addresses API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const data = addressSchema.parse(body);
+
+    if (data.isDefault) {
+      await db.address.updateMany({
+        where: { userId: session.user.id, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    const address = await db.address.create({
+      data: {
+        ...data,
+        userId: session.user.id,
+      },
+    });
+
+    return Response.json(address, { status: 201 });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }

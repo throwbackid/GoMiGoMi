@@ -1,55 +1,111 @@
-/**
- * Single Address API - Get, Update, Delete
- *
- * TODO: BACKEND_2 - Implement single address operations
- *
- * GET /api/addresses/[id]
- * - Get address details (owner only)
- *
- * PUT /api/addresses/[id]
- * - Update address (owner only)
- * - Validate with addressSchema.partial()
- * - Handle default address changes
- *
- * DELETE /api/addresses/[id]
- * - Delete address (owner only)
- * - Consider preventing delete if it's the only address
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
+import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@/lib/db";
+import { addressSchema } from "@/types";
+import { createErrorResponse } from "@/lib/errors";
 
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  // TODO: BACKEND_2 - Get address
-  // 1. Check auth
-  // 2. Verify ownership: db.address.findFirst({ where: { id, userId } })
-  return NextResponse.json(
-    { error: "Address API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+interface Params {
+  params: { id: string };
 }
 
-export async function PUT() {
-  // TODO: BACKEND_2 - Update address
-  // 1. Check auth
-  // 2. Verify ownership
-  // 3. Validate body with addressSchema.partial().parse(body)
-  // 4. Handle isDefault flag changes
-  // 5. Update with db.address.update()
-  return NextResponse.json(
-    { error: "Address API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const address = await db.address.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!address) {
+      return Response.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    if (address.userId !== session.user.id) {
+      return Response.json({ error: "Address does not belong to you" }, { status: 403 });
+    }
+
+    return Response.json(address);
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }
 
-export async function DELETE() {
-  // TODO: BACKEND_2 - Delete address
-  // 1. Check auth
-  // 2. Verify ownership
-  // 3. Delete with db.address.delete()
-  return NextResponse.json(
-    { error: "Address API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function PUT(request: NextRequest, { params }: Params) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const address = await db.address.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!address) {
+      return Response.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    if (address.userId !== session.user.id) {
+      return Response.json({ error: "Address does not belong to you" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const data = addressSchema.partial().parse(body);
+
+    if (data.isDefault) {
+      await db.address.updateMany({
+        where: { userId: session.user.id, isDefault: true, id: { not: params.id } },
+        data: { isDefault: false },
+      });
+    }
+
+    const updated = await db.address.update({
+      where: { id: params.id },
+      data,
+    });
+
+    return Response.json(updated);
+  } catch (error) {
+    return createErrorResponse(error);
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: Params) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const address = await db.address.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!address) {
+      return Response.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    if (address.userId !== session.user.id) {
+      return Response.json({ error: "Address does not belong to you" }, { status: 403 });
+    }
+
+    await db.address.delete({ where: { id: params.id } });
+
+    return Response.json({ success: true });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }
