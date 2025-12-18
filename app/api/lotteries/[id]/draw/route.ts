@@ -1,34 +1,128 @@
-/**
- * Lottery Draw API - Select Winner
- *
- * TODO: BACKEND_2 - Implement winner selection endpoint
- *
- * POST /api/lotteries/[id]/draw
- * - Manually draw winner (creator only)
- * - Calls completeLottery from lib/lottery.ts (BACKEND_3)
- * - Updates lottery status to COMPLETED
- * - Creates notifications for winner and participants
- *
- * BUSINESS RULES:
- * - Only creator can manually trigger draw
- * - Lottery must be ACTIVE
- * - Lottery must have at least 1 entry
- * - If 1 entry, that person automatically wins
- * - Otherwise, use PPS algorithm (BACKEND_3)
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
+import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@/lib/db";
+import { createErrorResponse } from "@/lib/errors";
 
-import { NextResponse } from "next/server";
+interface Params {
+  params: { id: string };
+}
 
-export async function POST() {
-  // TODO: BACKEND_2 - Draw winner
-  // 1. Check auth
-  // 2. Verify caller is creator
-  // 3. Verify lottery is ACTIVE
-  // 4. Call completeLottery(lotteryId) from lib/lottery.ts (BACKEND_3)
-  return NextResponse.json(
-    { error: "Draw API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function POST(request: NextRequest, { params }: Params) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const result = await db.$transaction(
+      async (tx) => {
+        const lottery = await tx.lottery.findUnique({
+          where: { id: params.id },
+          include: { entries: true },
+        });
+
+        if (!lottery) {
+          throw new Error("Lottery not found");
+        }
+
+        if (lottery.creatorId !== session.user.id) {
+          throw new Error("Only the lottery creator can draw a winner");
+        }
+
+        if (lottery.status === "COMPLETED") {
+          throw new Error("Lottery already has a winner");
+        }
+
+        if (lottery.status !== "ACTIVE") {
+          throw new Error("Lottery is not active");
+        }
+
+        if (lottery.entries.length === 0) {
+          throw new Error("No entries in this lottery");
+        }
+
+        const totalPoints = lottery.entries.reduce((sum, e) => sum + e.points, 0);
+        const random = Math.random() * totalPoints;
+
+        let cumulative = 0;
+        let winnerId = lottery.entries[0].userId;
+
+        for (const entry of lottery.entries) {
+          cumulative += entry.points;
+          if (random < cumulative) {
+            winnerId = entry.userId;
+            break;
+          }
+        }
+
+        await tx.user.update({
+          where: { id: lottery.creatorId },
+          data: { points: { increment: totalPoints } },
+        });
+
+        await tx.pointTransaction.create({
+          data: {
+            userId: lottery.creatorId,
+            amount: totalPoints,
+            type: "LOTTERY_CREATED",
+            description: `Lottery completed: ${lottery.title}`,
+            lotteryId: lottery.id,
+          },
+        });
+
+        const updated = await tx.lottery.update({
+          where: { id: params.id },
+          data: {
+            status: "COMPLETED",
+            winnerId,
+          },
+          include: {
+            winner: { select: { id: true, name: true, image: true } },
+          },
+        });
+
+        return { lottery: updated, totalPoints, winnerId };
+      },
+      {
+        isolationLevel: "Serializable",
+        timeout: 30000,
+      }
+    );
+
+    const lottery = result.lottery;
+
+    await db.notification.create({
+      data: {
+        userId: result.winnerId,
+        type: "LOTTERY_WON",
+        title: "Congratulations! You Won!",
+        message: `You won the lottery "${lottery.title}"!`,
+        data: { lotteryId: lottery.id },
+      },
+    }).catch(console.error);
+
+    await db.notification.create({
+      data: {
+        userId: lottery.creatorId,
+        type: "POINTS_EARNED",
+        title: "Lottery Completed",
+        message: `Your lottery "${lottery.title}" has completed. You earned ${result.totalPoints} points!`,
+        data: { lotteryId: lottery.id, points: result.totalPoints },
+      },
+    }).catch(console.error);
+
+    console.log(`Lottery ${lottery.id} completed. Winner: ${result.winnerId}, Points: ${result.totalPoints}`);
+
+    return Response.json({
+      success: true,
+      winner: lottery.winner,
+      totalPoints: result.totalPoints,
+    });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }

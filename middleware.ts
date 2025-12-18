@@ -1,31 +1,47 @@
-/**
- * Next.js Middleware
- *
- * TODO: BACKEND_2 - Implement route protection
- *
- * Protected routes to handle:
- * - /dashboard/* - User dashboard
- * - /lotteries/create - Create lottery
- * - /settings/* - User settings
- *
- * Auth routes (redirect to dashboard if logged in):
- * - /login
- * - /register
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
- */
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
-// Placeholder middleware - BACKEND_2 will implement with Better Auth
-export function middleware(_request: NextRequest) {
-  // TODO: Check session cookie and protect routes
-  return NextResponse.next();
+const protectedRoutes = ["/dashboard", "/lotteries/create", "/settings"];
+
+const authRoutes = ["/login", "/register"];
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-request-id", requestId);
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  const sessionCookie = getSessionCookie(request);
+  const isAuthenticated = !!sessionCookie;
+
+  if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api).*)",
   ],
 };
