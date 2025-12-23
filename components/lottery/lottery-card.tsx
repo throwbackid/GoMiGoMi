@@ -1,124 +1,177 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { Clock, Users, Sparkles, Trophy } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PointBadge } from "@/components/shared/point-badge";
-import { formatTimeRemaining } from "@/lib/utils";
-import { Clock, Users, Trophy } from "lucide-react";
+import type { Lottery, User } from "@/types";
 
-interface LotteryCardProps {
-  lottery: {
-    id: string;
-    title: string;
-    images: string[];
-    condition: string;
-    status: string;
-    pointsPerEntry: number;
-    endDate: string;
-    startDate: string;
-    creator: {
-      name: string;
-      image?: string;
-    };
-    _count?: {
-      entries: number;
-    };
-    winner?: {
-      name: string;
-    };
-  };
-}
-
-const conditionColors = {
-  NEW: "bg-green-500",
-  LIKE_NEW: "bg-emerald-500",
-  GOOD: "bg-blue-500",
-  FAIR: "bg-amber-500",
-  POOR: "bg-red-500",
+// Condition labels and colors
+const conditionConfig: Record<string, { label: string; className: string }> = {
+  NEW: { label: "New", className: "bg-teal/20 text-teal border-teal/30" },
+  LIKE_NEW: { label: "Like New", className: "bg-teal/15 text-teal border-teal/20" },
+  GOOD: { label: "Good", className: "bg-gold/20 text-gold border-gold/30" },
+  FAIR: { label: "Fair", className: "bg-coral/20 text-coral border-coral/30" },
+  POOR: { label: "Poor", className: "bg-muted text-muted-foreground border-border" },
 };
 
-export function LotteryCard({ lottery }: LotteryCardProps) {
-  const isEnded = lottery.status === "COMPLETED" || lottery.status === "CANCELLED";
+interface LotteryCardProps {
+  lottery: Lottery & {
+    creator: Pick<User, "id" | "name" | "image">;
+    winner?: Pick<User, "id" | "name" | "image"> | null;
+    _count: { entries: number };
+  };
+  showActions?: boolean;
+  className?: string;
+}
+
+export function LotteryCard({
+  lottery,
+  showActions = true,
+  className,
+}: LotteryCardProps) {
+  const condition = conditionConfig[lottery.condition] || conditionConfig.GOOD;
+  const isEnding = lottery.endDate && new Date(lottery.endDate) < new Date(Date.now() + 24 * 60 * 60 * 1000);
   const isScheduled = lottery.status === "SCHEDULED";
-  const entryCount = lottery._count?.entries || 0;
+  const isCompleted = lottery.status === "COMPLETED";
+  const timeRemaining = lottery.endDate
+    ? formatDistanceToNow(new Date(lottery.endDate), { addSuffix: true })
+    : null;
 
   return (
-    <Link href={`/lotteries/${lottery.id}`}>
-      <div className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg hover:border-primary/50">
-        {/* Image */}
-        <div className="relative aspect-square overflow-hidden">
+    <Link
+      href={`/lotteries/${lottery.id}`}
+      className={cn(
+        "lottery-card group block",
+        isCompleted && "opacity-75 grayscale-[30%]",
+        className
+      )}
+    >
+      {/* Image */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-muted">
+        {lottery.images[0] ? (
           <Image
-            src={lottery.images[0] || "/placeholder.jpg"}
+            src={lottery.images[0]}
             alt={lottery.title}
             fill
-            className="object-cover transition-transform group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
-
-          {/* Condition Badge */}
-          <Badge
-            className={`absolute top-2 left-2 ${conditionColors[lottery.condition as keyof typeof conditionColors]}`}
-          >
-            {lottery.condition.replace("_", " ")}
-          </Badge>
-
-          {/* Status Overlay */}
-          {isEnded && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <div className="text-center text-white">
-                <Trophy className="h-8 w-8 mx-auto mb-2" />
-                <p className="font-semibold">
-                  {lottery.winner ? `Won by ${lottery.winner.name}` : "Ended"}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isScheduled && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <Badge variant="secondary" className="text-lg px-4 py-2">
-                Coming Soon
-              </Badge>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          <h3 className="font-semibold line-clamp-1 mb-2">{lottery.title}</h3>
-
-          <div className="flex items-center justify-between mb-3">
-            <PointBadge points={lottery.pointsPerEntry} size="sm" />
-
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>{entryCount}</span>
-            </div>
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Sparkles className="h-12 w-12 text-muted-foreground/30" />
           </div>
+        )}
 
-          <div className="flex items-center justify-between">
-            {/* Creator */}
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={lottery.creator.image} />
-                <AvatarFallback>
-                  {lottery.creator.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground truncate max-w-[100px]">
-                {lottery.creator.name}
-              </span>
+        {/* Condition badge */}
+        <Badge
+          variant="outline"
+          className={cn(
+            "absolute left-3 top-3 border",
+            condition.className
+          )}
+        >
+          {condition.label}
+        </Badge>
+
+        {/* Status overlay for scheduled */}
+        {isScheduled && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+            <Badge variant="secondary" className="text-sm">
+              Coming soon
+            </Badge>
+          </div>
+        )}
+
+        {/* Ending soon indicator */}
+        {isEnding && !isScheduled && !isCompleted && (
+          <div className="absolute right-3 top-3">
+            <Badge variant="destructive" className="animate-pulse">
+              Ending soon
+            </Badge>
+          </div>
+        )}
+
+        {/* Ended indicator */}
+        {isCompleted && (
+          <div className="absolute right-3 top-3">
+            <Badge variant="secondary" className="bg-muted/90">
+              Ended
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        {/* Title */}
+        <h3 className="font-semibold line-clamp-1 group-hover:text-primary transition-colors">
+          {lottery.title}
+        </h3>
+
+        {/* Description */}
+        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+          {lottery.description}
+        </p>
+
+        {/* Stats */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {/* Entries */}
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span>{lottery._count.entries}</span>
             </div>
 
-            {/* Time Remaining */}
-            {!isEnded && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            {/* Time remaining / Ended */}
+            {timeRemaining && (
+              <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                <span>{formatTimeRemaining(lottery.endDate)}</span>
+                <span>{isCompleted ? `Ended ${timeRemaining}` : timeRemaining}</span>
               </div>
             )}
           </div>
+
+          {/* Entry cost (only for active) */}
+          {showActions && !isCompleted && (
+            <PointBadge points={lottery.pointsPerEntry} size="sm" />
+          )}
+        </div>
+
+        {/* Winner (for completed lotteries) */}
+        {isCompleted && lottery.winner && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-gold/10 px-3 py-2">
+            <Trophy className="h-4 w-4 text-gold" />
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-xs font-medium text-gold">
+              {lottery.winner.name?.charAt(0).toUpperCase() || "?"}
+            </div>
+            <span className="text-xs font-medium text-gold">
+              Won by {lottery.winner.name || "Anonymous"}
+            </span>
+          </div>
+        )}
+
+        {/* No winner (completed but no entries) */}
+        {isCompleted && !lottery.winner && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+            <span className="text-xs text-muted-foreground">
+              No entries - lottery expired
+            </span>
+          </div>
+        )}
+
+        {/* Creator */}
+        <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-3">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+            {lottery.creator.name?.charAt(0).toUpperCase() || "?"}
+          </div>
+          <span className="text-xs text-muted-foreground">
+            by {lottery.creator.name || "Anonymous"}
+          </span>
         </div>
       </div>
     </Link>
