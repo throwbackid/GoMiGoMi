@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,31 @@ interface LotteryFiltersProps {
 export function LotteryFilters({ category, condition, search, sort }: LotteryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [searchValue, setSearchValue] = useState(search || "");
+
+  // Debounced search - updates URL after 300ms of no typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (searchValue) {
+        params.set("search", searchValue);
+      } else {
+        params.delete("search");
+      }
+      params.delete("page");
+
+      const newUrl = `/lotteries?${params.toString()}`;
+      const currentUrl = `/lotteries?${searchParams.toString()}`;
+
+      // Only navigate if the URL actually changed
+      if (newUrl !== currentUrl) {
+        router.push(newUrl);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, searchParams, router]);
 
   const updateFilter = (key: string, value: string | undefined) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -71,26 +97,19 @@ export function LotteryFilters({ category, condition, search, sort }: LotteryFil
     router.push(`/lotteries?${params.toString()}`);
   };
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const searchValue = formData.get("search") as string;
-    updateFilter("search", searchValue || undefined);
-  };
-
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       {/* Search */}
-      <form className="relative flex-1" onSubmit={handleSearch}>
+      <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          name="search"
           placeholder="Search lotteries..."
-          defaultValue={search}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
           className="pl-10"
         />
-      </form>
+      </div>
 
       {/* Filters */}
       <div className="flex gap-2">
