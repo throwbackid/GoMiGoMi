@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { PointBadge } from "@/components/shared/point-badge";
+import { HeaderPoints } from "./header-points";
 import { NotificationBell } from "./notification-bell";
 import { Menu, Plus, LayoutDashboard, Settings, LogOut, User } from "lucide-react";
 import { useState } from "react";
@@ -64,7 +64,7 @@ export function Header() {
           {user ? (
             <>
               {/* Points Badge */}
-              <PointBadge points={user.points || 0} size="sm" />
+              <HeaderPoints />
 
               {/* Notifications */}
               <NotificationBell />
