@@ -12,16 +12,17 @@ import { formatDate, formatTimeRemaining } from "@/lib/utils";
 import { Clock, Users, Trophy, Calendar } from "lucide-react";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function LotteryDetailPage({ params }: PageProps) {
+  const { id } = await params;
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   const lottery = await db.lottery.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       creator: { select: { id: true, name: true, image: true } },
       winner: { select: { id: true, name: true, image: true } },
