@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const secret = authHeader?.replace("Bearer ", "");
 
-  if (!verifySecret(secret)) {
+  if (!verifySecret(secret ?? null)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -80,12 +80,10 @@ export async function GET(request: NextRequest) {
       const completionResults = [];
       for (const lottery of expiredLotteries) {
         try {
-          const result = await completeLottery(lottery.id);
+          await completeLottery(lottery.id);
           completionResults.push({
             id: lottery.id,
             success: true,
-            winnerId: result.winnerId,
-            skipped: result.skipped,
           });
         } catch (error) {
           completionResults.push({ id: lottery.id, success: false, error: String(error) });

@@ -16,11 +16,12 @@ A point-based lottery platform for used goods. Users list items as lotteries, bu
 
 | Category | Technology |
 |----------|------------|
-| Framework | Next.js 16 (App Router, Turbopack) |
+| Framework | Next.js 16 (App Router) |
+| Runtime | React 19 |
 | Language | TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
+| Styling | Tailwind CSS v4 + shadcn/ui |
 | Database | PostgreSQL |
-| ORM | Prisma 7 |
+| ORM | Prisma 5 |
 | Authentication | Better Auth |
 | State Management | TanStack Query |
 | Validation | Zod |
@@ -72,6 +73,13 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 # Uploadthing (Optional)
 UPLOADTHING_SECRET="your-uploadthing-secret"
 UPLOADTHING_APP_ID="your-uploadthing-app-id"
+
+# Cron Jobs (Required for production)
+CRON_SECRET="your-cron-secret"
+
+# Rate Limiting - Upstash Redis (Optional)
+UPSTASH_REDIS_REST_URL="your-upstash-url"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
 ```
 
 ### 4. Set up the database
@@ -100,16 +108,32 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 gomigomi/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # Authentication pages (login, register)
-│   ├── (main)/            # Main app pages
+│   ├── (auth)/            # Authentication pages
+│   │   ├── login/         # Login page
+│   │   └── register/      # Registration page
+│   ├── (main)/            # Main app pages (protected)
 │   │   ├── dashboard/     # User dashboard
+│   │   │   ├── my-entries/    # User's lottery entries
+│   │   │   ├── my-lotteries/  # User's created lotteries
+│   │   │   └── points/        # Point history
+│   │   ├── how-it-works/  # How it works page
 │   │   ├── lotteries/     # Lottery browsing & creation
-│   │   └── settings/      # User settings & addresses
+│   │   │   ├── [id]/      # Lottery detail page
+│   │   │   └── create/    # Create lottery page
+│   │   └── settings/      # User settings
+│   │       ├── profile/   # Profile settings
+│   │       └── addresses/ # Address management
 │   └── api/               # API routes
-│       ├── auth/          # NextAuth endpoints
+│       ├── auth/          # Better Auth endpoints
 │       ├── lotteries/     # Lottery CRUD & actions
+│       │   └── [id]/      # Lottery-specific endpoints
+│       │       ├── enter/ # Enter/boost lottery
+│       │       └── draw/  # Manual winner draw
 │       ├── addresses/     # Address management
-│       └── notifications/ # Notification endpoints
+│       ├── notifications/ # Notification endpoints
+│       ├── cron/          # Scheduled jobs
+│       │   └── complete-lotteries/
+│       └── health/        # Health check
 ├── components/
 │   ├── ui/                # shadcn/ui components
 │   ├── lottery/           # Lottery-specific components
@@ -117,14 +141,22 @@ gomigomi/
 │   ├── layout/            # Header, footer, sidebar
 │   └── shared/            # Reusable components
 ├── lib/                   # Utility functions
-│   ├── auth.ts           # NextAuth configuration
+│   ├── auth.ts           # Better Auth configuration
+│   ├── auth-client.ts    # Better Auth client
 │   ├── db.ts             # Prisma client
 │   ├── lottery.ts        # Lottery business logic
 │   ├── points.ts         # Point system
-│   └── notifications.ts  # Notification helpers
+│   ├── notifications.ts  # Notification helpers
+│   ├── errors.ts         # Custom error classes
+│   ├── logger.ts         # Logging utility
+│   ├── utils.ts          # Utility functions
+│   ├── rate-limit.ts     # Rate limiting
+│   └── cron-lock.ts      # Distributed cron locking
 ├── prisma/
-│   └── schema.prisma     # Database schema
+│   ├── schema.prisma     # Database schema
+│   └── seed.ts           # Database seeding
 ├── types/                # TypeScript types & Zod schemas
+├── middleware.ts         # Route protection
 └── public/               # Static assets
 ```
 
@@ -132,7 +164,7 @@ gomigomi/
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server with Turbopack |
+| `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
@@ -140,6 +172,7 @@ gomigomi/
 | `npx prisma generate` | Generate Prisma client |
 | `npx prisma db push` | Push schema changes to database |
 | `npx prisma migrate dev` | Create and apply migrations |
+| `npx tsx prisma/seed.ts` | Seed database with test data |
 
 ## Business Rules
 
@@ -171,6 +204,9 @@ Winners are selected using Probability Proportional to Size:
 ## Database Models
 
 - **User** - Account info, point balance
+- **Account** - OAuth providers & credentials (Better Auth)
+- **Session** - User session management
+- **Verification** - Email verification tokens
 - **Address** - Shipping addresses
 - **Lottery** - Listed items with status tracking
 - **LotteryEntry** - User entries with point amounts

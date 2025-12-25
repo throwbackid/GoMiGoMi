@@ -6,11 +6,12 @@ import { addressSchema } from "@/types";
 import { createErrorResponse } from "@/lib/errors";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 
     const address = await db.address.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!address) {
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -48,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     const address = await db.address.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!address) {
@@ -64,13 +66,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     if (data.isDefault) {
       await db.address.updateMany({
-        where: { userId: session.user.id, isDefault: true, id: { not: params.id } },
+        where: { userId: session.user.id, isDefault: true, id: { not: id } },
         data: { isDefault: false },
       });
     }
 
     const updated = await db.address.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
 
@@ -82,6 +84,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -91,7 +94,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     const address = await db.address.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!address) {
@@ -102,7 +105,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return Response.json({ error: "Address does not belong to you" }, { status: 403 });
     }
 
-    await db.address.delete({ where: { id: params.id } });
+    await db.address.delete({ where: { id } });
 
     return Response.json({ success: true });
   } catch (error) {

@@ -5,12 +5,13 @@ import { markAsRead } from "@/lib/notifications";
 import { createErrorResponse } from "@/lib/errors";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // POST /api/notifications/[id]/read
 export async function POST(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const notification = await markAsRead(params.id, session.user.id);
+    const notification = await markAsRead(id, session.user.id);
 
     return Response.json(notification);
   } catch (error) {

@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Plus, X, ImageIcon } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import Image from "next/image";
+import { UploadDropzone } from "@/lib/uploadthing";
 
 const conditions = [
   { value: "NEW", label: "New" },
@@ -34,7 +35,7 @@ const lotterySchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters").max(2000),
   condition: z.enum(["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"]),
   category: z.string().min(1, "Please select a category"),
-  pointsPerEntry: z.number().min(1, "Minimum 1 point").default(10),
+  pointsPerEntry: z.number().min(1, "Minimum 1 point"),
   maxParticipants: z.number().min(1).optional(),
   endDate: z.string().min(1, "End date is required"),
 });
@@ -49,7 +50,6 @@ export function LotteryForm({ categories }: LotteryFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
-  const [imageInput, setImageInput] = useState("");
 
   const {
     register,
@@ -63,18 +63,6 @@ export function LotteryForm({ categories }: LotteryFormProps) {
       pointsPerEntry: 10,
     },
   });
-
-  const addImage = () => {
-    if (imageInput && images.length < 5) {
-      try {
-        new URL(imageInput);
-        setImages([...images, imageInput]);
-        setImageInput("");
-      } catch {
-        toast.error("Please enter a valid image URL");
-      }
-    }
-  };
 
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
@@ -119,16 +107,28 @@ export function LotteryForm({ categories }: LotteryFormProps) {
       {/* Images */}
       <div className="space-y-2">
         <Label>Images (1-5)</Label>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Enter image URL"
-            value={imageInput}
-            onChange={(e) => setImageInput(e.target.value)}
+
+        {images.length < 5 && (
+          <UploadDropzone
+            endpoint="lotteryImages"
+            onClientUploadComplete={(res) => {
+              const newUrls = res.map((file) => file.ufsUrl);
+              setImages((prev) => [...prev, ...newUrls].slice(0, 5));
+              toast.success(`${res.length} image(s) uploaded!`);
+            }}
+            onUploadError={(error: Error) => {
+              toast.error(`Upload failed: ${error.message}`);
+            }}
+            config={{ mode: "auto" }}
+            appearance={{
+              container: "border-2 border-dashed rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors",
+              uploadIcon: "text-muted-foreground",
+              label: "text-muted-foreground",
+              allowedContent: "text-muted-foreground text-xs",
+              button: "bg-primary text-primary-foreground hover:bg-primary/90",
+            }}
           />
-          <Button type="button" onClick={addImage} disabled={images.length >= 5}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
 
         {images.length > 0 && (
           <div className="flex gap-2 flex-wrap mt-2">
@@ -147,11 +147,8 @@ export function LotteryForm({ categories }: LotteryFormProps) {
           </div>
         )}
 
-        {images.length === 0 && (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
-            <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-            <p>Add image URLs above</p>
-          </div>
+        {images.length >= 5 && (
+          <p className="text-sm text-muted-foreground">Maximum 5 images reached</p>
         )}
       </div>
 
