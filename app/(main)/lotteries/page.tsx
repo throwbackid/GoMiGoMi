@@ -1,25 +1,18 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Search, Filter, Plus, Sparkles, SlidersHorizontal } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { LotteryCard } from "@/components/lottery/lottery-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LotteryFilters } from "@/components/lottery/lottery-filters";
 
 // Revalidate every 60 seconds for fresh lottery data
 export const revalidate = 60;
 
-// Categories for filter
+// Categories for active filter badges
 const categories = [
   { name: "All Categories", slug: "all" },
   { name: "Electronics", slug: "electronics" },
@@ -34,7 +27,7 @@ const categories = [
   { name: "Other", slug: "other" },
 ];
 
-// Conditions for filter
+// Conditions for active filter badges
 const conditions = [
   { name: "All Conditions", value: "all" },
   { name: "New", value: "NEW" },
@@ -42,15 +35,6 @@ const conditions = [
   { name: "Good", value: "GOOD" },
   { name: "Fair", value: "FAIR" },
   { name: "Poor", value: "POOR" },
-];
-
-// Sort options
-const sortOptions = [
-  { name: "Ending Soon", value: "endDate-asc" },
-  { name: "Newest First", value: "createdAt-desc" },
-  { name: "Most Entries", value: "entries-desc" },
-  { name: "Lowest Entry Cost", value: "pointsPerEntry-asc" },
-  { name: "Highest Entry Cost", value: "pointsPerEntry-desc" },
 ];
 
 interface LotteriesPageProps {
@@ -323,112 +307,13 @@ export default async function LotteriesPage({ searchParams }: LotteriesPageProps
       <section className="py-8">
         <div className="container px-4">
           {/* Filter Bar */}
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-            {/* Search */}
-            <form className="relative flex-1" action="/lotteries" method="get">
-              {/* Preserve other params */}
-              {params.category && (
-                <input type="hidden" name="category" value={params.category} />
-              )}
-              {params.condition && (
-                <input type="hidden" name="condition" value={params.condition} />
-              )}
-              {params.sort && (
-                <input type="hidden" name="sort" value={params.sort} />
-              )}
-
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                name="search"
-                placeholder="Search lotteries..."
-                defaultValue={params.search}
-                className="pl-10"
-              />
-            </form>
-
-            {/* Filters */}
-            <div className="flex gap-2">
-              {/* Category Filter */}
-              <Select defaultValue={params.category || "all"}>
-                <SelectTrigger className="w-[160px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.slug} value={cat.slug}>
-                      <Link
-                        href={{
-                          pathname: "/lotteries",
-                          query: {
-                            ...params,
-                            category: cat.slug === "all" ? undefined : cat.slug,
-                            page: undefined,
-                          },
-                        }}
-                        className="block w-full"
-                      >
-                        {cat.name}
-                      </Link>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Condition Filter */}
-              <Select defaultValue={params.condition || "all"}>
-                <SelectTrigger className="w-[140px]">
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  {conditions.map((cond) => (
-                    <SelectItem key={cond.value} value={cond.value}>
-                      <Link
-                        href={{
-                          pathname: "/lotteries",
-                          query: {
-                            ...params,
-                            condition: cond.value === "all" ? undefined : cond.value,
-                            page: undefined,
-                          },
-                        }}
-                        className="block w-full"
-                      >
-                        {cond.name}
-                      </Link>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
-              <Select defaultValue={params.sort || "endDate-asc"}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      <Link
-                        href={{
-                          pathname: "/lotteries",
-                          query: {
-                            ...params,
-                            sort: opt.value,
-                            page: undefined,
-                          },
-                        }}
-                        className="block w-full"
-                      >
-                        {opt.name}
-                      </Link>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="mb-8">
+            <LotteryFilters
+              category={params.category}
+              condition={params.condition}
+              search={params.search}
+              sort={params.sort}
+            />
           </div>
 
           {/* Active Filters */}
