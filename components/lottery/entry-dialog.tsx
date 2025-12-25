@@ -39,7 +39,8 @@ export function EntryDialog({
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  const userBalance = session?.user?.points || 0;
+  const user = session?.user as { id: string; name: string; email: string; image?: string | null; points?: number } | undefined;
+  const userBalance = user?.points || 0;
   const minPoints = userEntry ? 1 : lottery.pointsPerEntry;
   const maxPoints = userBalance;
 

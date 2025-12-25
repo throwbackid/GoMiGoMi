@@ -86,6 +86,15 @@ export const cronLogger = {
     log("info", "Cron job skipped", { jobName, reason }),
 };
 
+// Generic logger for ad-hoc logging
+export const logger = {
+  debug: (context: LogContext, message: string) => log("debug", message, context),
+  info: (context: LogContext, message: string) => log("info", message, context),
+  warn: (context: LogContext, message: string) => log("warn", message, context),
+  error: (context: LogContext, message: string) => log("error", message, context),
+  fatal: (context: LogContext, message: string) => log("fatal", message, context),
+};
+
 export const authLogger = {
   signIn: (userId: string, method: string) =>
     log("info", "User signed in", { userId, method }),
@@ -118,4 +127,4 @@ export function logRequest(
   });
 }
 
-export default { log, lotteryLogger, pointsLogger, cronLogger, authLogger, logRequest };
+export default { log, logger, lotteryLogger, pointsLogger, cronLogger, authLogger, logRequest };

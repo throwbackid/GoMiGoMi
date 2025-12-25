@@ -7,12 +7,13 @@ import { enterLotterySchema } from "@/types";
 import { createErrorResponse } from "@/lib/errors";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // POST /api/lotteries/[id]/enter
 export async function POST(request: NextRequest, { params }: Params) {
   try {
+    const { id: lotteryId } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       where: {
         userId_lotteryId: {
           userId: session.user.id,
-          lotteryId: params.id,
+          lotteryId,
         },
       },
     });
@@ -37,20 +38,26 @@ export async function POST(request: NextRequest, { params }: Params) {
     let entry;
     if (existingEntry) {
       // Boost existing entry
-      entry = await boostEntry(params.id, session.user.id, points);
+      entry = await boostEntry(lotteryId, session.user.id, points);
     } else {
       // New entry
-      entry = await enterLottery(params.id, session.user.id, points);
+      entry = await enterLottery(lotteryId, session.user.id, points);
     }
 
     // Calculate new probability
-    const probabilities = await calculateProbabilities(params.id);
-    const userProb = probabilities.find((p) => p.userId === session.user.id);
-    const totalPoints = probabilities.reduce((sum, p) => sum + p.points, 0);
+    const probabilities = await calculateProbabilities(lotteryId);
+    const userProbability = probabilities.get(session.user.id) || 0;
+
+    // Get total points from all entries
+    const allEntries = await db.lotteryEntry.findMany({
+      where: { lotteryId },
+      select: { points: true },
+    });
+    const totalPoints = allEntries.reduce((sum, e) => sum + e.points, 0);
 
     return Response.json({
       entry,
-      probability: userProb?.probability || 0,
+      probability: userProbability,
       totalPoints,
       message: existingEntry
         ? `Added ${points} points to your entry!`

@@ -408,13 +408,13 @@ export async function completeLottery(lotteryId: string): Promise<void> {
 
   // If already completed, nothing more to do
   if (result.alreadyCompleted) {
-    lotteryLogger.completed(lotteryId, result.winnerId, 0, 0);
+    lotteryLogger.completed(lotteryId, result.winnerId ?? "none", 0, 0);
     return;
   }
 
   // Log successful completion
   const { lottery, winnerId, totalPoints } = result;
-  lotteryLogger.completed(lotteryId, winnerId, lottery.entries.length, totalPoints);
+  lotteryLogger.completed(lotteryId, winnerId ?? "none", lottery.entries.length, totalPoints);
 
   if (winnerId && totalPoints > 0) {
     pointsLogger.transferred("lottery_pool", lottery.creatorId, totalPoints, lotteryId);

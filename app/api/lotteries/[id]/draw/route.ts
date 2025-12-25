@@ -5,11 +5,12 @@ import { db } from "@/lib/db";
 import { createErrorResponse } from "@/lib/errors";
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
   try {
+    const { id: lotteryId } = await params;
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const result = await db.$transaction(
       async (tx) => {
         const lottery = await tx.lottery.findUnique({
-          where: { id: params.id },
+          where: { id: lotteryId },
           include: { entries: true },
         });
 
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         });
 
         const updated = await tx.lottery.update({
-          where: { id: params.id },
+          where: { id: lotteryId },
           data: {
             status: "COMPLETED",
             winnerId,
