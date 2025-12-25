@@ -1,3 +1,5 @@
+import { ZodError } from "zod";
+
 const SAFE_ERROR_MESSAGES = new Set([
   "Lottery not found",
   "Lottery is not active",
@@ -31,7 +33,30 @@ const SAFE_PATTERNS = [
   /^Maximum \d+ participants reached$/,
 ];
 
+export function getZodErrorMessage(error: ZodError): string {
+  const issues = error.issues;
+  if (issues.length === 0) {
+    return "Validation failed";
+  }
+
+  // Get the first error message
+  const firstIssue = issues[0];
+  const field = firstIssue.path.join(".");
+  const message = firstIssue.message;
+
+  // Return a user-friendly message
+  if (field) {
+    return `${field}: ${message}`;
+  }
+  return message;
+}
+
 export function getSafeErrorMessage(error: unknown): string {
+  // Handle Zod validation errors
+  if (error instanceof ZodError) {
+    return getZodErrorMessage(error);
+  }
+
   if (error instanceof Error) {
     const message = error.message;
 
@@ -50,7 +75,9 @@ export function getSafeErrorMessage(error: unknown): string {
 }
 
 export function createErrorResponse(error: unknown, status: number = 500) {
+  // Use 400 for validation errors
+  const responseStatus = error instanceof ZodError ? 400 : status;
   const message = getSafeErrorMessage(error);
   console.error("API Error:", error);
-  return Response.json({ error: message }, { status });
+  return Response.json({ error: message }, { status: responseStatus });
 }

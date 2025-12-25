@@ -1,61 +1,138 @@
 /**
  * Single Lottery API - Get, Update, Delete
- *
- * TODO: BACKEND_2 - Implement single lottery operations
- *
- * GET /api/lotteries/[id]
- * - Get lottery details with entries and creator
- * - Calculate total points in pool
- * - Include entry stats and probabilities
- *
- * PUT /api/lotteries/[id]
- * - Update lottery (creator only, DRAFT status only)
- * - Validate with updateLotterySchema
- *
- * DELETE /api/lotteries/[id]
- * - Cancel lottery (creator only)
- * - Refund all entries (calls BACKEND_3 refund logic)
- *
- * See: team-guides/BACKEND_2_API_AUTH_LOTTERY.md
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { db } from "@/lib/db";
+import { updateLotterySchema } from "@/types";
+import { cancelLottery } from "@/lib/lottery";
+import { createErrorResponse } from "@/lib/errors";
 
-export async function GET() {
-  // TODO: BACKEND_2 - Fetch lottery with entries
-  // const lottery = await db.lottery.findUnique({
-  //   where: { id },
-  //   include: {
-  //     creator: { select: { id: true, name: true, image: true } },
-  //     entries: { include: { user: { select: { id: true, name: true, image: true } } } },
-  //   },
-  // });
-  return NextResponse.json(
-    { error: "Lottery API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+interface RouteParams {
+  params: Promise<{ id: string }>;
 }
 
-export async function PUT() {
-  // TODO: BACKEND_2 - Update lottery
-  // 1. Check auth
-  // 2. Verify caller is creator
-  // 3. Verify lottery is DRAFT
-  // 4. Validate body with updateLotterySchema
-  // 5. Update with db.lottery.update()
-  return NextResponse.json(
-    { error: "Lottery API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+
+    const lottery = await db.lottery.findUnique({
+      where: { id },
+      include: {
+        creator: { select: { id: true, name: true, image: true } },
+        winner: { select: { id: true, name: true, image: true } },
+        entries: {
+          include: {
+            user: { select: { id: true, name: true, image: true } },
+          },
+          orderBy: { points: "desc" },
+        },
+        _count: { select: { entries: true } },
+      },
+    });
+
+    if (!lottery) {
+      return NextResponse.json({ error: "Lottery not found" }, { status: 404 });
+    }
+
+    // Calculate total points
+    const totalPoints = lottery.entries.reduce((sum, e) => sum + e.points, 0);
+
+    // Add probability to each entry
+    const entriesWithProbability = lottery.entries.map((entry) => ({
+      ...entry,
+      probability: totalPoints > 0 ? entry.points / totalPoints : 0,
+    }));
+
+    return NextResponse.json({
+      ...lottery,
+      entries: entriesWithProbability,
+      totalPoints,
+    });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }
 
-export async function DELETE() {
-  // TODO: BACKEND_2 - Cancel lottery with refunds
-  // 1. Check auth
-  // 2. Verify caller is creator
-  // 3. Call cancelLottery from lib/lottery.ts (BACKEND_3)
-  return NextResponse.json(
-    { error: "Lottery API not implemented - BACKEND_2 TODO" },
-    { status: 501 }
-  );
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const lottery = await db.lottery.findUnique({
+      where: { id },
+      include: { _count: { select: { entries: true } } },
+    });
+
+    if (!lottery) {
+      return NextResponse.json({ error: "Lottery not found" }, { status: 404 });
+    }
+
+    if (lottery.creatorId !== session.user.id) {
+      return NextResponse.json({ error: "Not authorized to edit this lottery" }, { status: 403 });
+    }
+
+    if (lottery.status === "COMPLETED" || lottery.status === "CANCELLED") {
+      return NextResponse.json({ error: "Cannot edit a completed or cancelled lottery" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const data = updateLotterySchema.parse(body);
+
+    // If there are entries, don't allow changing pointsPerEntry
+    const updateData: any = {};
+    if (data.title) updateData.title = data.title;
+    if (data.description) updateData.description = data.description;
+    if (data.images) updateData.images = data.images;
+    if (data.condition) updateData.condition = data.condition;
+    if (data.category) updateData.category = data.category;
+    if (data.endDate) updateData.endDate = new Date(data.endDate);
+    if (data.maxParticipants !== undefined) updateData.maxParticipants = data.maxParticipants;
+
+    // Only update pointsPerEntry if no entries exist
+    if (data.pointsPerEntry !== undefined && lottery._count.entries === 0) {
+      updateData.pointsPerEntry = data.pointsPerEntry;
+    }
+
+    const updated = await db.lottery.update({
+      where: { id },
+      data: updateData,
+      include: {
+        creator: { select: { id: true, name: true, image: true } },
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    return createErrorResponse(error);
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await cancelLottery(id, session.user.id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }
