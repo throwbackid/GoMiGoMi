@@ -29,7 +29,7 @@ export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const user = session?.user;
+  const user = session?.user as { id: string; name: string; email: string; image?: string | null; points?: number } | undefined;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

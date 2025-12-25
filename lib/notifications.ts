@@ -1,12 +1,12 @@
 import { db } from "./db";
-import { NotificationType } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 
 export async function createNotification(
   userId: string,
   type: NotificationType,
   title: string,
   message: string,
-  data?: Record<string, unknown>
+  data?: Prisma.InputJsonValue
 ) {
   return db.notification.create({
     data: {
@@ -14,7 +14,7 @@ export async function createNotification(
       type,
       title,
       message,
-      data: data || {},
+      data: data ?? Prisma.JsonNull,
     },
   });
 }
