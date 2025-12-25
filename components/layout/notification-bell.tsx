@@ -80,7 +80,7 @@ export function NotificationBell() {
         )}
         <div className="border-t p-2">
           <Link
-            href="/dashboard"
+            href="/notifications"
             className="text-sm text-primary hover:underline block text-center"
           >
             View all notifications
