@@ -1,16 +1,43 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 
 import { db } from "@/lib/db";
+import { completeLottery } from "@/lib/lottery";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LotteryCard } from "@/components/lottery/lottery-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LotteryFilters } from "@/components/lottery/lottery-filters";
+
+// Dynamic import with ssr: false to prevent hydration mismatch from Radix UI random IDs
+const LotteryFilters = dynamic(
+  () => import("@/components/lottery/lottery-filters").then((mod) => mod.LotteryFilters),
+  { ssr: false }
+);
 
 // Revalidate every 60 seconds for fresh lottery data
 export const revalidate = 60;
+
+// Complete any expired lotteries (fallback for when cron doesn't run)
+async function completeExpiredLotteries() {
+  try {
+    const expiredLotteries = await db.lottery.findMany({
+      where: {
+        status: "ACTIVE",
+        endDate: { lte: new Date() },
+      },
+      select: { id: true },
+    });
+
+    // Complete each expired lottery (non-blocking, errors logged but not thrown)
+    await Promise.allSettled(
+      expiredLotteries.map((lottery) => completeLottery(lottery.id))
+    );
+  } catch (error) {
+    console.error("Failed to complete expired lotteries:", error);
+  }
+}
 
 // Categories for active filter badges
 const categories = [
@@ -273,6 +300,9 @@ async function RecentlyEndedGrid() {
 }
 
 export default async function LotteriesPage({ searchParams }: LotteriesPageProps) {
+  // Complete any expired lotteries first (fallback for local dev / cron failures)
+  await completeExpiredLotteries();
+
   const params = await searchParams;
 
   return (
