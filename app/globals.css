@@ -1,60 +1,418 @@
 @import "tailwindcss";
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --radius: 0.5rem;
+@custom-variant dark (&:is(.dark *));
 
-  /* Custom colors */
-  --gold: 45 93% 47%;
-  --coral: 16 100% 66%;
-  --teal: 174 72% 56%;
+/* ============================================
+   GoMiGoMi Design System
+   Neo-Tokyo meets Treasure Hunt
+   ============================================ */
+
+@theme inline {
+  /* Core semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Border radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* GoMiGoMi brand colors */
+  --color-coral: var(--coral);
+  --color-teal: var(--teal);
+  --color-gold: var(--gold);
+  --color-vermillion: var(--vermillion);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* GoMiGoMi Brand Palette */
+  --coral: oklch(0.72 0.18 25);
+  --teal: oklch(0.65 0.12 195);
+  --gold: oklch(0.82 0.16 85);
+  --vermillion: oklch(0.62 0.24 28);
+
+  /* Light mode */
+  --background: oklch(0.98 0.008 80);
+  --foreground: oklch(0.18 0.02 280);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 280);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 280);
+
+  --primary: oklch(0.62 0.24 28);
+  --primary-foreground: oklch(0.98 0.008 80);
+
+  --secondary: oklch(0.95 0.01 80);
+  --secondary-foreground: oklch(0.25 0.02 280);
+
+  --muted: oklch(0.94 0.01 80);
+  --muted-foreground: oklch(0.5 0.02 280);
+
+  --accent: oklch(0.65 0.12 195);
+  --accent-foreground: oklch(0.98 0.008 80);
+
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0.88 0.02 80);
+  --input: oklch(0.92 0.02 80);
+  --ring: oklch(0.62 0.24 28);
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  /* GoMiGoMi Dark Mode - Rich charcoal with warm undertones */
+  --coral: oklch(0.75 0.18 25);
+  --teal: oklch(0.72 0.14 195);
+  --gold: oklch(0.85 0.16 85);
+  --vermillion: oklch(0.68 0.22 28);
+
+  --background: oklch(0.14 0.015 280);
+  --foreground: oklch(0.94 0.01 80);
+
+  --card: oklch(0.18 0.018 280);
+  --card-foreground: oklch(0.94 0.01 80);
+
+  --popover: oklch(0.20 0.018 280);
+  --popover-foreground: oklch(0.94 0.01 80);
+
+  --primary: oklch(0.68 0.22 28);
+  --primary-foreground: oklch(0.98 0.005 80);
+
+  --secondary: oklch(0.22 0.02 280);
+  --secondary-foreground: oklch(0.92 0.01 80);
+
+  --muted: oklch(0.24 0.018 280);
+  --muted-foreground: oklch(0.65 0.02 80);
+
+  --accent: oklch(0.72 0.14 195);
+  --accent-foreground: oklch(0.12 0.015 280);
+
+  --destructive: oklch(0.62 0.24 25);
+  --border: oklch(0.28 0.02 280);
+  --input: oklch(0.26 0.02 280);
+  --ring: oklch(0.68 0.22 28);
 }
 
-* {
-  @apply border-border;
+/* ============================================
+   Base Styles
+   ============================================ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01";
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
 }
 
-body {
-  @apply bg-background text-foreground;
-  font-feature-settings: "rlig" 1, "calt" 1;
+/* ============================================
+   Typography Classes
+   ============================================ */
+
+@layer components {
+  .heading-display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-coral via-vermillion to-gold bg-clip-text text-transparent;
+  }
+
+  .text-gradient-teal {
+    @apply bg-gradient-to-r from-teal to-accent bg-clip-text text-transparent;
+  }
+}
+
+/* ============================================
+   Background Patterns & Effects
+   ============================================ */
+
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  .bg-glow {
+    background: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      oklch(0.68 0.22 28 / 0.15),
+      transparent
+    );
+  }
+
+  .bg-glow-teal {
+    background: radial-gradient(
+      ellipse 60% 40% at 80% 0%,
+      oklch(0.72 0.14 195 / 0.1),
+      transparent
+    );
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(
+      ellipse at center,
+      var(--card) 0%,
+      var(--background) 100%
+    );
+  }
+}
+
+/* ============================================
+   Animation Utilities
+   ============================================ */
+
+@layer utilities {
+  .animate-in-stagger > * {
+    animation: fadeSlideIn 0.5s ease-out backwards;
+  }
+
+  .animate-in-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .animate-in-stagger > *:nth-child(2) { animation-delay: 50ms; }
+  .animate-in-stagger > *:nth-child(3) { animation-delay: 100ms; }
+  .animate-in-stagger > *:nth-child(4) { animation-delay: 150ms; }
+  .animate-in-stagger > *:nth-child(5) { animation-delay: 200ms; }
+  .animate-in-stagger > *:nth-child(6) { animation-delay: 250ms; }
+  .animate-in-stagger > *:nth-child(7) { animation-delay: 300ms; }
+  .animate-in-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background: linear-gradient(
+      90deg,
+      var(--muted) 0%,
+      var(--muted-foreground) 50%,
+      var(--muted) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 20px oklch(0.68 0.22 28 / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px oklch(0.68 0.22 28 / 0.5);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.5 0 0 / 0.3) transparent;
+  }
+}
+
+/* ============================================
+   Component Enhancements
+   ============================================ */
+
+@layer components {
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+    box-shadow:
+      0 10px 40px -15px oklch(0 0 0 / 0.1),
+      0 4px 6px -4px oklch(0 0 0 / 0.1);
+  }
+
+  .btn-glow {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+
+  .btn-glow::before {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: radial-gradient(
+      circle at center,
+      oklch(1 0 0 / 0.2) 0%,
+      transparent 70%
+    );
+  }
+
+  .btn-glow:hover::before {
+    @apply opacity-100;
+  }
+
+  .lottery-card {
+    @apply relative overflow-hidden rounded-xl border bg-card transition-all duration-300;
+  }
+
+  .lottery-card::before {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      135deg,
+      oklch(0.68 0.22 28 / 0.05) 0%,
+      oklch(0.72 0.14 195 / 0.05) 100%
+    );
+  }
+
+  .lottery-card:hover::before {
+    @apply opacity-100;
+  }
+
+  .lottery-card:hover {
+    @apply -translate-y-1 border-primary/30;
+    box-shadow:
+      0 20px 40px -15px oklch(0.68 0.22 28 / 0.15),
+      0 8px 16px -8px oklch(0 0 0 / 0.1);
+  }
+
+  .winner-badge {
+    @apply relative inline-flex items-center gap-1.5 rounded-full bg-gold/20 px-3 py-1 text-sm font-medium text-gold;
+    box-shadow: 0 0 20px oklch(0.82 0.16 85 / 0.3);
+  }
+
+  .probability-bar {
+    @apply relative h-2 overflow-hidden rounded-full bg-muted;
+  }
+
+  .probability-bar-fill {
+    @apply absolute inset-y-0 left-0 rounded-full transition-all duration-500;
+    background: linear-gradient(90deg, var(--teal), var(--coral));
+  }
+}
+
+/* ============================================
+   Page Transitions
+   ============================================ */
+
+@layer utilities {
+  .page-enter {
+    animation: pageEnter 0.4s ease-out;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Hide scrollbar for category overflow */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 1280px;
+  }
 }

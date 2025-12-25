@@ -1,25 +1,28 @@
-/**
- * Notification Read API - Mark as Read
- *
- * TODO: BACKEND_3 - Implement mark as read endpoint
- *
- * POST /api/notifications/[id]/read - Mark notification as read
- *
- * Implementation:
- * 1. Check auth
- * 2. Call markAsRead() from lib/notifications.ts
- *
- * See: team-guides/BACKEND_3_BUSINESS_LOGIC.md
- */
+import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { markAsRead } from "@/lib/notifications";
+import { createErrorResponse } from "@/lib/errors";
 
-import { NextResponse } from "next/server";
+interface Params {
+  params: { id: string };
+}
 
-export async function POST() {
-  // TODO: BACKEND_3 - Implement mark as read
-  // 1. Check auth: auth.api.getSession({ headers: await headers() })
-  // 2. Call markAsRead(id, session.user.id) from lib/notifications.ts
-  return NextResponse.json(
-    { error: "Mark as read API not implemented - BACKEND_3 TODO" },
-    { status: 501 }
-  );
+// POST /api/notifications/[id]/read
+export async function POST(request: NextRequest, { params }: Params) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const notification = await markAsRead(params.id, session.user.id);
+
+    return Response.json(notification);
+  } catch (error) {
+    return createErrorResponse(error, 400);
+  }
 }

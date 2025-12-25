@@ -1,31 +1,26 @@
-/**
- * Notifications API - List
- *
- * TODO: BACKEND_3 - Implement notifications list endpoint
- *
- * GET /api/notifications - List user's notifications
- *
- * Query params:
- * - unreadOnly: boolean - Only return unread
- * - limit: number - Max to return (default 50)
- *
- * Implementation:
- * 1. Check auth
- * 2. Parse query params
- * 3. Call getNotifications() and getUnreadCount() from lib/notifications.ts
- *
- * See: team-guides/BACKEND_3_BUSINESS_LOGIC.md
- */
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { getNotifications, getUnreadCount } from "@/lib/notifications";
+import { createErrorResponse } from "@/lib/errors";
 
-import { NextResponse } from "next/server";
-
+// GET /api/notifications
 export async function GET() {
-  // TODO: BACKEND_3 - Implement notifications list
-  // 1. Check auth: auth.api.getSession({ headers: await headers() })
-  // 2. Parse query params (unreadOnly, limit)
-  // 3. Call getNotifications() and getUnreadCount()
-  return NextResponse.json(
-    { error: "Notifications API not implemented - BACKEND_3 TODO" },
-    { status: 501 }
-  );
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [notifications, unreadCount] = await Promise.all([
+      getNotifications(session.user.id, false, 50),
+      getUnreadCount(session.user.id),
+    ]);
+
+    return Response.json({ notifications, unreadCount });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
 }

@@ -59,7 +59,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn.social({ provider: "google" });
+      await signIn.social({ provider: "google", callbackURL: "/" });
     } catch (error) {
       toast.error("Google sign-in failed");
       setIsLoading(false);
@@ -97,7 +97,7 @@ export default function LoginPage() {
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full h-11 btn-glow" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
@@ -114,7 +114,7 @@ export default function LoginPage() {
 
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full h-11 gap-2 btn-glow"
           onClick={handleGoogleSignIn}
           disabled={isLoading}
         >
