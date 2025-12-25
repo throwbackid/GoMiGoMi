@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 
@@ -9,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LotteryCard } from "@/components/lottery/lottery-card";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Dynamic import with ssr: false to prevent hydration mismatch from Radix UI random IDs
-const LotteryFilters = dynamic(
-  () => import("@/components/lottery/lottery-filters").then((mod) => mod.LotteryFilters),
-  { ssr: false }
-);
+import { LotteryFiltersWrapper } from "@/components/lottery/lottery-filters-wrapper";
 
 // Revalidate every 60 seconds for fresh lottery data
 export const revalidate = 60;
@@ -338,7 +332,7 @@ export default async function LotteriesPage({ searchParams }: LotteriesPageProps
         <div className="container px-4">
           {/* Filter Bar */}
           <div className="mb-8">
-            <LotteryFilters
+            <LotteryFiltersWrapper
               category={params.category}
               condition={params.condition}
               search={params.search}
