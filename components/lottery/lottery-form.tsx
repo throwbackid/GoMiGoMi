@@ -31,8 +31,8 @@ const conditions = [
 ];
 
 const lotterySchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters").max(100),
-  description: z.string().min(20, "Description must be at least 20 characters").max(2000),
+  title: z.string().min(3, "Title must be at least 3 characters").max(100),
+  description: z.string().min(0).max(2000),
   condition: z.enum(["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"]),
   category: z.string().min(1, "Please select a category"),
   pointsPerEntry: z.number().min(1, "Minimum 1 point"),
