@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Edit, Trash2, Award, LogIn, MapPin } from "lucide-react";
+import { Loader2, Edit, Trash2, LogIn, MapPin } from "lucide-react";
 import Link from "next/link";
 
 interface LotteryActionsProps {
@@ -49,28 +49,6 @@ export function LotteryActions({
   const createdAt = new Date(lottery.createdAt);
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const canCancel = createdAt > fiveMinutesAgo;
-
-  // Handle draw winner
-  const handleDraw = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/lotteries/${lottery.id}/draw`, {
-        method: "POST",
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to draw winner");
-      }
-
-      toast.success("Winner selected!");
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Handle cancel
   const handleCancel = async () => {
@@ -110,36 +88,6 @@ export function LotteryActions({
   if (isOwner) {
     return (
       <div className="space-y-3">
-        {isActive && hasEntries && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Award className="mr-2 h-4 w-4" />
-                )}
-                Draw Winner
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Draw Winner?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will randomly select a winner based on their entry points.
-                  You will receive {totalPoints} points from the pool.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDraw}>
-                  Draw Winner
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-
         {isActive && !hasEntries && (
           <p className="text-center text-muted-foreground py-4">
             No entries yet. Wait for participants to enter.

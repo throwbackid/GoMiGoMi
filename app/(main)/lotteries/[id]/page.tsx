@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PointBadge } from "@/components/shared/point-badge";
 import { LotteryActions } from "@/components/lottery/lottery-actions";
 import { formatDate, formatTimeRemaining } from "@/lib/utils";
-import { Clock, Users, Trophy, Calendar } from "lucide-react";
+import { Clock, Users, Trophy, Calendar, ChevronLeft } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -56,8 +57,22 @@ export default async function LotteryDetailPage({ params }: PageProps) {
   }));
 
   return (
-    <div className="container py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <>
+      {/* Header */}
+      <div className="border-b border-border/40 bg-card/30">
+        <div className="container px-4 py-3">
+          <Link
+            href="/lotteries"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to browse
+          </Link>
+        </div>
+      </div>
+
+      <div className="container py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Images */}
         <div className="space-y-4">
           <div className="relative aspect-square rounded-xl overflow-hidden">
@@ -218,6 +233,7 @@ export default async function LotteryDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

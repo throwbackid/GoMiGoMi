@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PointBadge } from "@/components/shared/point-badge";
 import { formatDate } from "@/lib/utils";
-import { ArrowUpRight, ArrowDownRight, Gift, Ticket, RefreshCw } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Gift, Ticket, RefreshCw, ChevronLeft } from "lucide-react";
 
 const typeConfig = {
   SIGNUP_BONUS: { label: "Signup Bonus", icon: Gift, positive: true },
@@ -45,8 +46,23 @@ export default async function PointsPage() {
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Points History</h1>
+    <div className="page-enter">
+      {/* Header */}
+      <div className="border-b border-border/40 bg-card/30">
+        <div className="container px-4 py-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to dashboard
+          </Link>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="container px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Points History</h1>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3 mb-8">
@@ -129,6 +145,7 @@ export default async function PointsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
