@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +23,9 @@ interface Notification {
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Fetch notifications from API
     async function fetchNotifications() {
       try {
         const res = await fetch("/api/notifications?limit=5");
@@ -38,7 +39,7 @@ export function NotificationBell() {
       }
     }
     fetchNotifications();
-  }, []);
+  }, [pathname]);
 
   return (
     <DropdownMenu>

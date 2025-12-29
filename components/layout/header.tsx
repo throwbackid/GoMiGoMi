@@ -43,6 +43,19 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
+          {user && (
+            <Link
+              href="/dashboard"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              Dashboard
+            </Link>
+          )}
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -117,7 +130,15 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => signOut()}
+                    onClick={() =>
+                      signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            window.location.href = "/";
+                          },
+                        },
+                      })
+                    }
                     className="text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
