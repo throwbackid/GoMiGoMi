@@ -45,6 +45,11 @@ export function LotteryActions({
   const isCompleted = lottery.status === "COMPLETED";
   const hasEntries = lottery.entries.length > 0;
 
+  // Updated: 5-minute cancel window logic
+  const createdAt = new Date(lottery.createdAt);
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const canCancel = createdAt > fiveMinutesAgo;
+
   // Handle draw winner
   const handleDraw = async () => {
     setIsLoading(true);
@@ -151,10 +156,15 @@ export function LotteryActions({
             </Button>
           )}
 
-          {isActive && (
+          {/* UPDATED: Cancel button logic */}
+          {isActive && canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="flex-1" disabled={isLoading}>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={isLoading}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
@@ -163,18 +173,34 @@ export function LotteryActions({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Cancel Lottery?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will cancel the lottery and refund all {lottery.entries.length} participants.
+                    This will cancel the lottery and refund all{" "}
+                    {lottery.entries.length} participants.
                     This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Keep Lottery</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCancel} className="bg-destructive">
+                  <AlertDialogAction
+                    onClick={handleCancel}
+                    className="bg-destructive"
+                  >
                     Cancel Lottery
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          )}
+
+          {isActive && !canCancel && (
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled
+              title="Cancellation window has passed"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
           )}
         </div>
       </div>
@@ -216,7 +242,7 @@ export function LotteryActions({
     );
   }
 
-  // User actions (enter or boost)
+  // User actions
   return (
     <>
       <Button
