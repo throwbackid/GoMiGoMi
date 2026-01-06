@@ -42,3 +42,9 @@ next-env.d.ts
 
 /lib/generated/prisma
 .env*.local
+
+# Documentation and reports (local only)
+diagrams/
+FINAL_REPORT.md
+FINAL_REPORT.docx
+~$*.docx
