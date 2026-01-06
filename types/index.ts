@@ -123,7 +123,7 @@ export const itemConditions = ["NEW", "LIKE_NEW", "GOOD", "FAIR", "POOR"] as con
 
 export const createLotterySchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters").max(100),
-  description: z.string().min(20, "Description must be at least 20 characters").max(2000),
+  description: z.string().max(2000),
   images: z.array(z.string().url()).min(1, "At least one image required").max(5),
   condition: z.enum(itemConditions),
   category: z.string().min(1, "Category is required"),

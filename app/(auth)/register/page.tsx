@@ -19,7 +19,7 @@ const registerSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z
     .string()
-    .min(12, "Password must be at least 12 characters")
+    .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain an uppercase letter")
     .regex(/[0-9]/, "Password must contain a number")
     .regex(/[^A-Za-z0-9]/, "Password must contain a special character"),
@@ -109,7 +109,7 @@ export default function RegisterPage() {
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Min 12 chars, 1 uppercase, 1 number, 1 special character
+              Min 8 chars, 1 uppercase, 1 number, 1 special character
             </p>
           </div>
           <div className="space-y-2">
