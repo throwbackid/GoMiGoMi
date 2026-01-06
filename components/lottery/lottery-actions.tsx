@@ -43,6 +43,7 @@ export function LotteryActions({
   const isActive = lottery.status === "ACTIVE";
   const isScheduled = lottery.status === "SCHEDULED";
   const isCompleted = lottery.status === "COMPLETED";
+  const isCancelled = lottery.status === "CANCELLED";
   const hasEntries = lottery.entries.length > 0;
 
   // Allow cancellation for active or scheduled lotteries
@@ -93,7 +94,7 @@ export function LotteryActions({
         )}
 
         <div className="flex gap-2">
-          {!isCompleted && (
+          {!isCompleted && !isCancelled && (
             <Button variant="outline" asChild className="flex-1">
               <Link href={`/lotteries/${lottery.id}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
