@@ -45,10 +45,8 @@ export function LotteryActions({
   const isCompleted = lottery.status === "COMPLETED";
   const hasEntries = lottery.entries.length > 0;
 
-  // Updated: 5-minute cancel window logic
-  const createdAt = new Date(lottery.createdAt);
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const canCancel = createdAt > fiveMinutesAgo;
+  // Allow cancellation for active or scheduled lotteries
+  const canCancel = isActive || isScheduled;
 
   // Handle cancel
   const handleCancel = async () => {
@@ -104,8 +102,8 @@ export function LotteryActions({
             </Button>
           )}
 
-          {/* UPDATED: Cancel button logic */}
-          {isActive && canCancel && (
+          {/* Cancel button for active or scheduled lotteries */}
+          {canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -139,17 +137,6 @@ export function LotteryActions({
             </AlertDialog>
           )}
 
-          {isActive && !canCancel && (
-            <Button
-              variant="destructive"
-              className="flex-1"
-              disabled
-              title="Cancellation window has passed"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-          )}
         </div>
       </div>
     );
