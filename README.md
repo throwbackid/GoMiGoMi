@@ -4,8 +4,6 @@ GoMiGoMi is a prototype for a secondhand marketplace where items are offered thr
 
 Developed as a school group project, it explores this marketplace concept for demonstration and learning. It does not support real-money transactions and is not intended for public launch.
 
-Original group project: [PBL4-2025/pbl_gomigomi](https://github.com/PBL4-2025/pbl_gomigomi).
-
 ## Features
 
 - **Item listings:** Browse by category, view item details and photos, and create or manage lotteries.
